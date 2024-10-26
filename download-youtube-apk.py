@@ -18,9 +18,10 @@ HEADERS = {
 filename = sys.argv[1]
 version = sys.argv[2].replace('.', '-')
 
-page_url = f'{BASE_URL}/apk/google-inc/youtube/youtube-{version}-release/youtube-{version}-android-apk-download/'
-download_page_url = BASE_URL + BeautifulSoup(requests.get(page_url, headers=HEADERS).text, 'lxml').select_one('.downloadButton')['href']
-apk_url = BASE_URL + BeautifulSoup(requests.get(download_page_url, headers=HEADERS).text, 'lxml').select_one('.notes a')['href']
+release_page_url = f'{BASE_URL}/apk/google-inc/youtube/youtube-{version}-release'
+download_page_url = BASE_URL + BeautifulSoup(requests.get(release_page_url, headers=HEADERS).text, 'lxml').find(class_='apkm-badge', string='APK').find_previous_sibling('a')['href']
+download_button_url = BASE_URL + BeautifulSoup(requests.get(download_page_url, headers=HEADERS).text, 'lxml').select_one('.downloadButton')['href']
+apk_url = BASE_URL + BeautifulSoup(requests.get(download_button_url, headers=HEADERS).text, 'lxml').select_one('.notes a')['href']
 
 download_file(apk_url, filename)
 
