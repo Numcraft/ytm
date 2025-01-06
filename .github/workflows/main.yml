@@ -68,7 +68,7 @@ jobs:
         run: |
           echo "$KEYSTORE" | base64 -d > revanced.keystore
           java -jar cli.jar patch \
-            --patches patches.jar \
+            --patches patches.rvp \
             --keystore revanced.keystore \
             --keystore-password $KEYSTORE_PASSWORD \
             --keystore-entry-password $KEYSTORE_PASSWORD \
