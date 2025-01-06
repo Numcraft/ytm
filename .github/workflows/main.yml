@@ -25,11 +25,9 @@ jobs:
         run: |
           CLI_VERSION=$(curl -s https://api.github.com/repos/ReVanced/revanced-cli/releases/latest | jq -r '.tag_name' | sed 's/^v//')
           PATCHES_VERSION=$(curl -s https://api.github.com/repos/ReVanced/revanced-patches/releases/latest | jq -r '.tag_name' | sed 's/^v//')
-          INTEGRATIONS_VERSION=$(curl -s https://api.github.com/repos/ReVanced/revanced-integrations/releases/latest | jq -r '.tag_name' | sed 's/^v//')
 
           echo CLI_VERSION=$CLI_VERSION | tee -a $GITHUB_ENV fetched-versions.txt
           echo PATCHES_VERSION=$PATCHES_VERSION | tee -a $GITHUB_ENV fetched-versions.txt
-          echo INTEGRATIONS_VERSION=$INTEGRATIONS_VERSION | tee -a $GITHUB_ENV fetched-versions.txt
 
       - name: Cache versions.txt
         uses: actions/cache@v4
@@ -56,8 +54,7 @@ jobs:
       - name: Download files
         run: |
           curl -sLo cli.jar "https://github.com/ReVanced/revanced-cli/releases/download/v$CLI_VERSION/revanced-cli-$CLI_VERSION-all.jar"
-          curl -sLo patches.jar "https://github.com/ReVanced/revanced-patches/releases/download/v$PATCHES_VERSION/revanced-patches-$PATCHES_VERSION.jar"
-          curl -sLo integrations.apk "https://github.com/ReVanced/revanced-integrations/releases/download/v$INTEGRATIONS_VERSION/revanced-integrations-$INTEGRATIONS_VERSION.apk"
+          curl -sLo patches.rvp "https://github.com/ReVanced/revanced-patches/releases/download/v$PATCHES_VERSION/patches-$PATCHES_VERSION.rvp"
 
           YOUTUBE_VERSION=$(java -jar cli.jar list-versions --filter-package-names com.google.android.youtube patches.jar | awk '/^\t/ {print $1}' | sort -Vr | head -n 1)
           python3 download-youtube-apk.py youtube.apk "$YOUTUBE_VERSION"
@@ -71,12 +68,11 @@ jobs:
         run: |
           echo "$KEYSTORE" | base64 -d > revanced.keystore
           java -jar cli.jar patch \
-            -b patches.jar \
-            -m integrations.apk \
+            --patches patches.jar \
             --keystore revanced.keystore \
             --keystore-password $KEYSTORE_PASSWORD \
             --keystore-entry-password $KEYSTORE_PASSWORD \
-            -o "youtube-$YOUTUBE_VERSION.apk" \
+            --out "youtube-$YOUTUBE_VERSION.apk" \
             youtube.apk
 
       - name: Create release
@@ -87,7 +83,6 @@ jobs:
           release_note=$(cat <<-EOF
             - **CLI Version**: $CLI_VERSION
             - **Patches Version**: $PATCHES_VERSION
-            - **Integrations Version**: $INTEGRATIONS_VERSION
             - **YouTube Version**: $YOUTUBE_VERSION
           EOF
           )
