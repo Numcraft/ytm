@@ -56,7 +56,7 @@ jobs:
           curl -sLo cli.jar "https://github.com/ReVanced/revanced-cli/releases/download/v$CLI_VERSION/revanced-cli-$CLI_VERSION-all.jar"
           curl -sLo patches.rvp "https://github.com/ReVanced/revanced-patches/releases/download/v$PATCHES_VERSION/patches-$PATCHES_VERSION.rvp"
 
-          YOUTUBE_VERSION=$(java -jar cli.jar list-versions --filter-package-names com.google.android.youtube patches.jar | awk '/^\t/ {print $1}' | sort -Vr | head -n 1)
+          YOUTUBE_VERSION=$(java -jar cli.jar list-versions --filter-package-names com.google.android.youtube patches.rvp | awk '/^\t/ {print $1}' | sort -Vr | head -n 1)
           python3 download-youtube-apk.py youtube.apk "$YOUTUBE_VERSION"
 
           echo "YOUTUBE_VERSION=$YOUTUBE_VERSION" | tee -a $GITHUB_ENV
