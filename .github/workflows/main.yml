@@ -21,74 +21,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y openjdk-11-jre-headless python3 python3-bs4 python3-requests curl jq
 
-      - name: Fetch versions
-        run: |
-          CLI_VERSION=$(curl -s https://api.github.com/repos/ReVanced/revanced-cli/releases/latest | jq -r '.tag_name' | sed 's/^v//')
-          PATCHES_VERSION=$(curl -s https://api.github.com/repos/ReVanced/revanced-patches/releases/latest | jq -r '.tag_name' | sed 's/^v//')
-
-          echo CLI_VERSION=$CLI_VERSION | tee -a $GITHUB_ENV fetched-versions.txt
-          echo PATCHES_VERSION=$PATCHES_VERSION | tee -a $GITHUB_ENV fetched-versions.txt
-
-      - name: Cache versions.txt
-        uses: actions/cache@v4
-        with:
-          path: versions.txt
-          key: versions-${{ github.run_id }}
-          restore-keys: |
-            versions-
-
-      - name: Check for version changes
+      - name: Build and release APK
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if [ -f versions.txt ]; then
-            if diff -q fetched-versions.txt versions.txt; then
-              echo "Versions have not changed. Exiting workflow."
-              gh run cancel ${{ github.run_id }}
-              gh run watch ${{ github.run_id }}
-            fi
-          fi
-
-          mv fetched-versions.txt versions.txt
-
-      - name: Download files
-        run: |
-          curl -sLo cli.jar "https://github.com/ReVanced/revanced-cli/releases/download/v$CLI_VERSION/revanced-cli-$CLI_VERSION-all.jar"
-          curl -sLo patches.rvp "https://github.com/ReVanced/revanced-patches/releases/download/v$PATCHES_VERSION/patches-$PATCHES_VERSION.rvp"
-
-          YOUTUBE_VERSION=$(java -jar cli.jar list-versions --filter-package-names com.google.android.youtube patches.rvp | awk '/^\t/ {print $1}' | sort -Vr | head -n 1)
-          python3 download-youtube-apk.py youtube.apk "$YOUTUBE_VERSION"
-
-          echo "YOUTUBE_VERSION=$YOUTUBE_VERSION" | tee -a $GITHUB_ENV
-
-      - name: Build APK
-        env:
           KEYSTORE: ${{ secrets.KEYSTORE }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
-          echo "$KEYSTORE" | base64 -d > revanced.keystore
-          java -jar cli.jar patch \
-            --patches patches.rvp \
-            --keystore revanced.keystore \
-            --keystore-password $KEYSTORE_PASSWORD \
-            --keystore-entry-password $KEYSTORE_PASSWORD \
-            --out "youtube-$YOUTUBE_VERSION.apk" \
-            youtube.apk
-
-      - name: Create release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          tag=$(date +%Y.%m.%d)
-          release_note=$(cat <<-EOF
-            - **CLI Version**: $CLI_VERSION
-            - **Patches Version**: $PATCHES_VERSION
-            - **YouTube Version**: $YOUTUBE_VERSION
-          EOF
-          )
-
-          gh release create "$tag" \
-              --repo="$GITHUB_REPOSITORY" \
-              --title "$tag" \
-              --notes "$release_note" \
-              youtube-$YOUTUBE_VERSION.apk
+          ./build.sh
