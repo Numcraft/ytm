@@ -2,17 +2,17 @@
 
 set -euo pipefail
 
-APP_ID=com.google.android.youtube
+APP_ID=com.google.android.apps.youtube.music
 ARCH=arm64-v8a
 
 CLI_VERSION=$(curl -s https://api.github.com/repos/ReVanced/revanced-cli/releases/latest | jq -r '.tag_name' | sed 's/^v//')
-PATCHES_VERSION=$(curl -s https://api.github.com/repos/ReVanced/revanced-patches/releases/latest | jq -r '.tag_name' | sed 's/^v//')
+PATCHES_VERSION=$(curl -s https://api.github.com/repos/inotia00/revanced-patches/releases/latest | jq -r '.tag_name' | sed 's/^v//')
 
 echo "Downloading revanced-cli version $CLI_VERSION..."
 curl -sLo cli.jar "https://github.com/ReVanced/revanced-cli/releases/download/v$CLI_VERSION/revanced-cli-$CLI_VERSION-all.jar"
 
 echo "Downloading revanced-patches version $PATCHES_VERSION..."
-curl -sLo patches.rvp "https://github.com/ReVanced/revanced-patches/releases/download/v$PATCHES_VERSION/patches-$PATCHES_VERSION.rvp"
+curl -sLo patches.rvp "https://github.com/inotia00/revanced-patches/releases/download/v$PATCHES_VERSION/patches-$PATCHES_VERSION.rvp"
 
 APP_VERSION=$(java -jar cli.jar list-versions --filter-package-names $APP_ID patches.rvp | awk '/^\t/ {print $1}' | sort -Vr | head -n 1)
 APK_PATH="$APP_ID-$APP_VERSION.apk"
